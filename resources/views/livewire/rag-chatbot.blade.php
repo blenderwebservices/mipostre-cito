@@ -55,7 +55,9 @@
                     @php $isUser = $msg['role'] === 'user'; @endphp
                     <div class="flex {{ $isUser ? 'justify-end' : 'justify-start' }}">
                         <div class="max-w-[85%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-xs {{ $isUser ? 'bg-gepp-600 text-white rounded-br-none' : 'bg-white text-slate-700 border border-slate-200 rounded-bl-none' }}">
-                            <div class="whitespace-pre-line">{!! nl2br(e($msg['content'])) !!}</div>
+                            <div class="chat-markdown space-y-1.5 [&_p]:leading-relaxed [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:space-y-0.5 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:space-y-0.5 [&_strong]:font-bold [&_em]:italic [&_h1]:font-extrabold [&_h1]:text-sm [&_h2]:font-bold [&_h2]:text-sm [&_h3]:font-bold [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[11px] {{ $isUser ? '[&_code]:bg-white/20 [&_a]:underline' : '[&_code]:bg-slate-100 [&_code]:text-brand-700 [&_a]:text-gepp-600 [&_a]:underline' }}">
+                                {!! \Illuminate\Support\Str::markdown($msg['content'], ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
+                            </div>
 
                             @if(!empty($msg['is_order']) && !empty($msg['order_number']))
                                 <div class="mt-2 pt-2 border-t border-emerald-100 flex items-center justify-between gap-2">

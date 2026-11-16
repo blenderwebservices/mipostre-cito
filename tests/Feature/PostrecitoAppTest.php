@@ -217,6 +217,7 @@ class PostrecitoAppTest extends TestCase
 
         Livewire::test(RagChatbot::class)
             ->call('toggleChat')
+            ->assertSeeHtml('<strong>Postrecito Bot</strong>')
             ->call('askQuickQuestion', '¿Qué sabores y tamaños tienen?')
             ->assertSee('Pay de Limón')
             ->assertSee('Vaso Individual')
