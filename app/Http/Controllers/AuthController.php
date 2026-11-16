@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Address;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,7 +49,8 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'phone' => ['required', 'string', 'max:30'],
-            'default_zone' => ['required', 'string', 'max:255'],
+            'zip_code' => ['required', 'string', 'max:10'],
+            'neighborhood' => ['required', 'string', 'max:120'],
             'default_address' => ['required', 'string', 'max:500'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ], [
@@ -60,11 +62,19 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'default_zone' => $validated['default_zone'],
-            'default_address' => $validated['default_address'],
+            'phone_number' => $validated['phone'],
             'password' => Hash::make($validated['password']),
             'is_admin' => false,
+        ]);
+
+        Address::create([
+            'user_id' => $user->id,
+            'tag' => 'Casa',
+            'street' => $validated['default_address'],
+            'exterior_number' => 'S/N',
+            'neighborhood' => $validated['neighborhood'],
+            'zip_code' => $validated['zip_code'],
+            'is_default' => true,
         ]);
 
         Auth::login($user);
@@ -82,4 +92,3 @@ class AuthController extends Controller
         return redirect()->route('home');
     }
 }
-

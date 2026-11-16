@@ -11,14 +11,16 @@ class RagChatbot extends Component
     public bool $isOpen = false;
     public string $userMessage = '';
     public bool $isLoading = false;
+    public bool $isLiveAi = false;
 
     /**
      * @var array<int, array{role: string, content: string, time: string, is_order?: bool, order_number?: string, requires_auth?: bool}>
      */
     public array $messages = [];
 
-    public function mount(): void
+    public function mount(RagService $ragService): void
     {
+        $this->isLiveAi = $ragService->isLiveAiEnabled();
         $userName = Auth::check() ? Auth::user()->name : 'amigo/a';
 
         $this->messages[] = [
@@ -60,6 +62,8 @@ class RagChatbot extends Component
 
         // Procesar mediante RAG Service (Embeddings + Retrieval + Gemini API)
         $result = $ragService->chat($text, Auth::user(), $history);
+
+        $this->isLiveAi = ($result['ai_mode'] ?? 'mocking') === 'live';
 
         $this->messages[] = [
             'role' => 'assistant',

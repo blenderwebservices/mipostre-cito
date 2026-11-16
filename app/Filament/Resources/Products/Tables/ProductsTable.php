@@ -16,34 +16,21 @@ class ProductsTable
     {
         return $table
             ->columns([
-                TextColumn::make('flavor.name')
-                    ->searchable(),
-                TextColumn::make('presentation.name')
-                    ->searchable(),
-                TextColumn::make('sku')
-                    ->label('SKU')
+                TextColumn::make('category.name')
                     ->searchable(),
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('slug')
                     ->searchable(),
-                TextColumn::make('price')
+                TextColumn::make('base_price')
                     ->money()
                     ->sortable(),
-                TextColumn::make('original_price')
-                    ->money()
-                    ->sortable(),
-                TextColumn::make('stock')
-                    ->numeric()
-                    ->sortable(),
-                ImageColumn::make('image_url'),
+                ImageColumn::make('image_path'),
                 TextColumn::make('badge')
                     ->searchable(),
-                IconColumn::make('is_available')
+                IconColumn::make('is_favorite')
                     ->boolean(),
-                IconColumn::make('is_promo')
-                    ->boolean(),
-                IconColumn::make('is_returnable_container')
+                IconColumn::make('is_active')
                     ->boolean(),
                 TextColumn::make('created_at')
                     ->dateTime()

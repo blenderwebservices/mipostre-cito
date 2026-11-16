@@ -41,13 +41,19 @@
                         @error('email') <p class="text-xs text-rose-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Zona de Cobertura *</label>
-                        <select name="default_zone" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-gepp-500 outline-none">
-                            <option value="Zona Centro / Roma / Condesa">Zona Centro / Roma / Condesa</option>
-                            <option value="Zona Sur (Del Valle / Coyoacán / Nápoles)">Zona Sur (Del Valle / Coyoacán / Nápoles)</option>
-                            <option value="Zona Poniente (Polanco / Anzures)">Zona Poniente (Polanco / Anzures)</option>
-                        </select>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Colonia *</label>
+                            <input name="neighborhood" type="text" value="{{ old('neighborhood') }}" required placeholder="Ej. Del Valle, Roma Norte"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-gepp-500 outline-none">
+                            @error('neighborhood') <p class="text-xs text-rose-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Código Postal *</label>
+                            <input name="zip_code" type="text" value="{{ old('zip_code') }}" required placeholder="Ej. 03100"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-gepp-500 outline-none">
+                            @error('zip_code') <p class="text-xs text-rose-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
                     </div>
 
                     <div>

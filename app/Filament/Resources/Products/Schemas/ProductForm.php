@@ -15,41 +15,26 @@ class ProductForm
     {
         return $schema
             ->components([
-                Select::make('flavor_id')
-                    ->relationship('flavor', 'name')
-                    ->required(),
-                Select::make('presentation_id')
-                    ->relationship('presentation', 'name')
-                    ->required(),
-                TextInput::make('sku')
-                    ->label('SKU')
+                Select::make('category_id')
+                    ->relationship('category', 'name')
                     ->required(),
                 TextInput::make('name')
                     ->required(),
                 TextInput::make('slug')
                     ->required(),
                 Textarea::make('description')
-                    ->required()
                     ->columnSpanFull(),
-                TextInput::make('price')
+                TextInput::make('base_price')
                     ->required()
                     ->numeric()
+                    ->default(35)
                     ->prefix('$'),
-                TextInput::make('original_price')
-                    ->numeric()
-                    ->prefix('$'),
-                TextInput::make('stock')
-                    ->required()
-                    ->numeric()
-                    ->default(50),
-                FileUpload::make('image_url')
+                FileUpload::make('image_path')
                     ->image(),
                 TextInput::make('badge'),
-                Toggle::make('is_available')
+                Toggle::make('is_favorite')
                     ->required(),
-                Toggle::make('is_promo')
-                    ->required(),
-                Toggle::make('is_returnable_container')
+                Toggle::make('is_active')
                     ->required(),
             ]);
     }

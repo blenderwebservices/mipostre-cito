@@ -14,36 +14,43 @@ class OrdersTable
     {
         return $table
             ->columns([
-                TextColumn::make('user.name')
-                    ->searchable(),
                 TextColumn::make('order_number')
                     ->searchable(),
-                TextColumn::make('status')
+                TextColumn::make('user.name')
+                    ->searchable(),
+                TextColumn::make('address.id')
+                    ->searchable(),
+                TextColumn::make('coupon.id')
+                    ->searchable(),
+                TextColumn::make('shippingZone.id')
                     ->searchable(),
                 TextColumn::make('customer_name')
                     ->searchable(),
                 TextColumn::make('customer_phone')
                     ->searchable(),
-                TextColumn::make('delivery_zone')
-                    ->searchable(),
-                TextColumn::make('delivery_address')
-                    ->searchable(),
-                TextColumn::make('scheduled_date')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('scheduled_slot')
-                    ->searchable(),
-                TextColumn::make('payment_method')
+                TextColumn::make('delivery_address_snapshot')
                     ->searchable(),
                 TextColumn::make('subtotal')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('delivery_fee')
+                TextColumn::make('discount_amount')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('total')
+                TextColumn::make('shipping_cost')
+                    ->money()
+                    ->sortable(),
+                TextColumn::make('total_amount')
                     ->numeric()
                     ->sortable(),
+                TextColumn::make('delivery_date')
+                    ->date()
+                    ->sortable(),
+                TextColumn::make('delivery_time_slot')
+                    ->searchable(),
+                TextColumn::make('status')
+                    ->searchable(),
+                TextColumn::make('payment_method')
+                    ->searchable(),
                 TextColumn::make('source')
                     ->searchable(),
                 TextColumn::make('created_at')

@@ -9,71 +9,55 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Product extends Model
 {
     protected $fillable = [
-        'flavor_id',
-        'presentation_id',
-        'sku',
+        'category_id',
         'name',
         'slug',
         'description',
-        'price',
-        'original_price',
-        'stock',
-        'image_url',
+        'base_price',
+        'image_path',
         'badge',
-        'is_available',
-        'is_promo',
-        'is_returnable_container',
+        'is_favorite',
+        'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:2',
-            'original_price' => 'decimal:2',
-            'stock' => 'integer',
-            'is_available' => 'boolean',
-            'is_promo' => 'boolean',
-            'is_returnable_container' => 'boolean',
+            'base_price' => 'decimal:2',
+            'is_favorite' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
-    public function flavor(): BelongsTo
+    public function category(): BelongsTo
     {
-        return $this->belongsTo(Flavor::class);
+        return $this->belongsTo(Category::class);
     }
 
-    public function presentation(): BelongsTo
+    public function variations(): HasMany
     {
-        return $this->belongsTo(Presentation::class);
-    }
-
-    public function orderItems(): HasMany
-    {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(ProductVariation::class);
     }
 
     public function toRagDocument(): string
     {
-        $flavorName = $this->flavor?->name ?? 'General';
-        $presentationName = $this->presentation?->name ?? 'Estándar';
-        $capacity = $this->presentation?->capacity ?? '';
-        $promoText = $this->is_promo && $this->original_price
-            ? "Promoción activa: Antes \${$this->original_price} MXN, ahora \${$this->price} MXN."
-            : "Precio: \${$this->price} MXN.";
-        $returnableText = $this->is_returnable_container
-            ? 'Envase de vidrio retornable tipo Mi Mandadito (bonificación en próxima entrega).'
-            : 'Envase grado alimenticio incluido.';
+        $catName = $this->category?->name ?? 'Postres Artesanales';
+        $varsText = $this->variations()
+            ->where('is_active', true)
+            ->get()
+            ->map(function (ProductVariation $v) {
+                $stock = $v->stock_quantity > 0 ? "Disponible ({$v->stock_quantity} pzas)" : 'Agotado';
+                $ret = $v->is_returnable_container ? ' [Envase retornable]' : '';
+                return "  - {$v->name} (SKU: {$v->sku}): \${$v->price} MXN ({$stock}){$ret}";
+            })
+            ->implode("\n");
 
         return implode("\n", [
-            "Producto ID: {$this->id} | SKU: {$this->sku}",
+            "Producto ID: {$this->id} | Categoría: {$catName}",
             "Nombre: {$this->name}",
-            "Sabor: {$flavorName}",
-            "Presentación: {$presentationName} ({$capacity})",
-            $promoText,
-            "Disponibilidad: " . ($this->is_available && $this->stock > 0 ? "Disponible ({$this->stock} en existencia)" : 'Agotado temporalmente'),
             "Descripción: {$this->description}",
-            $returnableText,
+            "Presentaciones y Precios:",
+            $varsText ?: "  - Precio base: \${$this->base_price} MXN",
         ]);
     }
 }
-

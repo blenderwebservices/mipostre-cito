@@ -14,40 +14,48 @@ class OrderForm
     {
         return $schema
             ->components([
+                TextInput::make('order_number')
+                    ->required(),
                 Select::make('user_id')
                     ->relationship('user', 'name')
                     ->required(),
-                TextInput::make('order_number')
-                    ->required(),
-                TextInput::make('status')
-                    ->required()
-                    ->default('pendiente'),
+                Select::make('address_id')
+                    ->relationship('address', 'id'),
+                Select::make('coupon_id')
+                    ->relationship('coupon', 'id'),
+                Select::make('shipping_zone_id')
+                    ->relationship('shippingZone', 'id'),
                 TextInput::make('customer_name')
                     ->required(),
                 TextInput::make('customer_phone')
-                    ->tel()
+                    ->tel(),
+                TextInput::make('delivery_address_snapshot')
                     ->required(),
-                TextInput::make('delivery_zone')
-                    ->required(),
-                TextInput::make('delivery_address')
-                    ->required(),
-                DatePicker::make('scheduled_date')
-                    ->required(),
-                TextInput::make('scheduled_slot')
-                    ->required(),
-                TextInput::make('payment_method')
-                    ->required()
-                    ->default('efectivo'),
                 TextInput::make('subtotal')
                     ->required()
                     ->numeric(),
-                TextInput::make('delivery_fee')
+                TextInput::make('discount_amount')
                     ->required()
                     ->numeric()
                     ->default(0),
-                TextInput::make('total')
+                TextInput::make('shipping_cost')
+                    ->required()
+                    ->numeric()
+                    ->default(0)
+                    ->prefix('$'),
+                TextInput::make('total_amount')
                     ->required()
                     ->numeric(),
+                DatePicker::make('delivery_date')
+                    ->required(),
+                TextInput::make('delivery_time_slot')
+                    ->required(),
+                TextInput::make('status')
+                    ->required()
+                    ->default('pending'),
+                TextInput::make('payment_method')
+                    ->required()
+                    ->default('efectivo'),
                 Textarea::make('notes')
                     ->columnSpanFull(),
                 TextInput::make('source')

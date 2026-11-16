@@ -1,15 +1,16 @@
-<div class="fixed bottom-5 right-5 z-50">
+<div class="fixed bottom-20 md:bottom-5 right-4 md:right-5 z-50">
     {{-- Floating Trigger Button --}}
     @if(! $isOpen)
         <button wire:click="toggleChat"
             class="group flex items-center gap-3 px-5 py-3.5 rounded-full bg-gradient-to-r from-gepp-600 to-brand-600 text-white shadow-2xl hover:shadow-brand-500/30 hover:scale-105 transition-all cursor-pointer">
             <div class="relative">
                 <i class="fa-solid fa-robot text-xl"></i>
-                <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-white animate-pulse"></span>
+                <span class="absolute -top-1 -right-1 w-2.5 h-2.5 {{ $isLiveAi ? 'bg-emerald-400' : 'bg-amber-400' }} rounded-full ring-2 ring-white animate-pulse"
+                    title="{{ $isLiveAi ? 'IA Activa (Gemini)' : 'Modo Mocking (Local)' }}"></span>
             </div>
             <div class="text-left hidden sm:block">
                 <span class="block text-xs font-bold leading-none">Postrecito Bot</span>
-                <span class="block text-[10px] text-white/80">Pide o pregunta aquí</span>
+                <span class="block text-[10px] text-white/85">{{ $isLiveAi ? 'IA Activa (Gemini)' : 'Modo Mocking' }}</span>
             </div>
         </button>
     @endif
@@ -24,8 +25,23 @@
                         <i class="fa-solid fa-robot text-lg"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-sm leading-tight">Postrecito Bot (RAG)</h3>
-                        <p class="text-[11px] text-white/80">Catálogo, envíos y pedidos al instante</p>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-sm leading-tight">Postrecito Bot (RAG)</h3>
+                            @if($isLiveAi)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-400/20 text-emerald-100 border border-emerald-300/40">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+                                    IA Activa
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/25 text-amber-100 border border-amber-300/40" title="Sin GEMINI_API_KEY en .env, usando motor RAG local">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-300"></span>
+                                    Modo Mocking
+                                </span>
+                            @endif
+                        </div>
+                        <p class="text-[11px] text-white/80">
+                            {{ $isLiveAi ? 'Conectado a Gemini Embeddings + Retrieval' : 'Motor local RAG (configura GEMINI_API_KEY en .env)' }}
+                        </p>
                     </div>
                 </div>
                 <button wire:click="toggleChat" class="text-white/80 hover:text-white p-1.5 cursor-pointer">

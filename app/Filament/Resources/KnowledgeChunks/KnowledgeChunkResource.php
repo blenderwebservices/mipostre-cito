@@ -13,12 +13,17 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class KnowledgeChunkResource extends Resource
 {
     protected static ?string $model = KnowledgeChunk::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCpuChip;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Inteligencia Artificial';
+
+    protected static ?string $navigationLabel = 'Base RAG (Embeddings)';
 
     protected static ?string $recordTitleAttribute = 'title';
 
