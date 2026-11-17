@@ -7,6 +7,7 @@ use App\Models\Campaign;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ShippingZone;
+use App\Services\RagService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -16,24 +17,45 @@ class HomePage extends Component
     use InteractsWithCart;
 
     public string $coverageQuery = '';
+    public string $coverageAddress = '';
+    public bool $isCoverageModalOpen = false;
     public ?string $coverageError = null;
     public ?string $coverageSuccess = null;
 
-    public function checkCoverage(): void
+    public function openCoverageModal(): void
+    {
+        $this->coverageError = null;
+        $this->coverageSuccess = null;
+        $this->isCoverageModalOpen = true;
+    }
+
+    public function closeCoverageModal(): void
+    {
+        $this->isCoverageModalOpen = false;
+    }
+
+    public function checkCoverage(RagService $ragService): void
     {
         $this->coverageError = null;
         $this->coverageSuccess = null;
 
-        $zone = ShippingZone::findByQuery($this->coverageQuery);
+        $input = trim($this->coverageAddress) !== ''
+            ? trim($this->coverageAddress . ' ' . $this->coverageQuery)
+            : trim($this->coverageQuery);
 
-        if ($zone) {
-            session()->put('postrecito_zone_id', $zone->id);
-            $this->coverageSuccess = "¡Sí tenemos cobertura en {$zone->neighborhood} (CP {$zone->zip_code})! Envío \${$zone->delivery_cost} MXN (gratis desde \${$zone->min_order_for_free_shipping} MXN).";
-            $this->redirect(route('menu'), navigate: true);
+        $result = $ragService->resolveMexicanCoverage($input);
+
+        if ($result['covered'] && $result['zone']) {
+            session()->put('postrecito_zone_id', $result['zone']->id);
+            if (trim($this->coverageAddress) !== '') {
+                session()->put('postrecito_coverage_address', trim($this->coverageAddress));
+            }
+
+            $this->coverageSuccess = $result['message'];
             return;
         }
 
-        $this->coverageError = 'Aún no llegamos a esa zona automáticamente. Prueba con CP 06700 (Roma Norte), 03100 (Del Valle), 06140 (Condesa) o 04000 (Coyoacán), o contáctanos por el Chatbot.';
+        $this->coverageError = $result['message'];
     }
 
     public function render()
@@ -59,4 +81,3 @@ class HomePage extends Component
         ]);
     }
 }
-

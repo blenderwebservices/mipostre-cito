@@ -40,12 +40,29 @@ class PostrecitoAppTest extends TestCase
         Livewire::test(HomePage::class)
             ->set('coverageQuery', '06700')
             ->call('checkCoverage')
-            ->assertRedirect(route('menu'));
+            ->assertNoRedirect()
+            ->assertSee('Sí tenemos cobertura en Roma Norte');
 
+        // Dirección completa en México relacionada con CP registrado en RAG/Zonas (06870 Chabacano)
+        Livewire::test(HomePage::class)
+            ->call('openCoverageModal')
+            ->set('coverageAddress', 'Calzada Chabacano 45, Col. Chabacano, CDMX, México')
+            ->call('checkCoverage')
+            ->assertNoRedirect()
+            ->assertSee('Chabacano');
+
+        // Dirección externa a México debe ser rechazada
+        Livewire::test(HomePage::class)
+            ->call('openCoverageModal')
+            ->set('coverageAddress', '123 Main St, New York, USA')
+            ->call('checkCoverage')
+            ->assertSee('externa a México');
+
+        // CP mexicano válido pero sin cobertura activa
         Livewire::test(HomePage::class)
             ->set('coverageQuery', '99999')
             ->call('checkCoverage')
-            ->assertSee('Aún no llegamos a esa zona automáticamente');
+            ->assertSee('aún no se encuentra en nuestras zonas de cobertura activa');
     }
 
     public function test_guest_can_browse_menu_and_promos_without_logging_in(): void
@@ -243,7 +260,7 @@ class PostrecitoAppTest extends TestCase
 
         $this->actingAs($customer)->get('/admin')->assertStatus(403);
 
-        $this->actingAs($admin)->get('/admin')->assertStatus(200);
+        $this->actingAs($admin)->get('/admin')->assertStatus(200)->assertSee('Ver Tienda (Front)');
         $this->actingAs($admin)->get('/admin/categories')->assertStatus(200);
         $this->actingAs($admin)->get('/admin/products')->assertStatus(200);
         $this->actingAs($admin)->get('/admin/orders')->assertStatus(200);

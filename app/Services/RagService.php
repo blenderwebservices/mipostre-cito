@@ -142,6 +142,130 @@ class RagService
     }
 
     /**
+     * Validate a Mexican postal code or full address against registered ShippingZones and RAG shipping_zone chunks.
+     * Rejects any address outside Mexico.
+     *
+     * @return array{
+     *     covered: bool,
+     *     is_mexico: bool,
+     *     zip_code: ?string,
+     *     zone: ?ShippingZone,
+     *     message: string
+     * }
+     */
+    public function resolveMexicanCoverage(string $input): array
+    {
+        $raw = trim($input);
+        if ($raw === '') {
+            return [
+                'covered' => false,
+                'is_mexico' => true,
+                'zip_code' => null,
+                'zone' => null,
+                'message' => 'Ingresa un código postal de México (5 dígitos) o una dirección completa.',
+            ];
+        }
+
+        $normalized = strtr(mb_strtolower($raw), [
+            'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n',
+        ]);
+
+        // Extraer posible CP mexicano de 5 dígitos (01000 - 99999)
+        $extractedCp = null;
+        if (preg_match('/\b(0[1-9]|[1-9]\d)\d{3}\b/', $raw, $cpMatch)) {
+            $extractedCp = $cpMatch[0];
+        }
+
+        // Detectar indicadores explícitos de México
+        $mentionsMexico = preg_match('/\b(mexico|cdmx|ciudad de mexico|edo\s*mex|estado de mexico|delegacion|alcaldia|col\.|colonia)\b/u', $normalized) === 1;
+
+        // Detectar formatos postales extranjeros (US ZIP+4, Canadá, Reino Unido) o países extranjeros
+        $hasForeignPostcode = preg_match('/\b\d{5}-\d{4}\b/', $raw) === 1
+            || preg_match('/\b[a-z]\d[a-z]\s?\d[a-z]\d\b/i', $raw) === 1
+            || preg_match('/\b[a-z]{1,2}\d[a-z\d]?\s?\d[a-z]{2}\b/i', $raw) === 1;
+
+        $mentionsForeignCountry = preg_match('/\b(usa|u\.s\.a\.|united states|estados unidos|ee\.?\s?uu\.?|canada|espana|spain|madrid|barcelona|colombia|bogota|medellin|argentina|buenos aires|chile|peru|ecuador|guatemala|brasil|brazil|france|francia|uk|united kingdom|reino unido|germany|alemania|italy|italia|miami|los angeles|chicago|houston|austin)\b/u', $normalized) === 1;
+
+        // Si menciona país/formato extranjero y no indica México ni coincide con un CP mexicano registrado
+        if (($hasForeignPostcode || $mentionsForeignCountry) && ! $mentionsMexico) {
+            return [
+                'covered' => false,
+                'is_mexico' => false,
+                'zip_code' => null,
+                'zone' => null,
+                'message' => 'Solo realizamos entregas dentro de México (códigos postales mexicanos de 5 dígitos). La dirección ingresada es externa a México, por lo que no hay cobertura.',
+            ];
+        }
+
+        // 1. Buscar por CP mexicano extraído en ShippingZone
+        if ($extractedCp) {
+            $zone = ShippingZone::where('is_active', true)->where('zip_code', $extractedCp)->first();
+            if ($zone) {
+                return [
+                    'covered' => true,
+                    'is_mexico' => true,
+                    'zip_code' => $zone->zip_code,
+                    'zone' => $zone,
+                    'message' => "¡Sí tenemos cobertura en {$zone->neighborhood} (CP {$zone->zip_code}, México)! Envío \$" . number_format($zone->delivery_cost, 2) . ' MXN (gratis desde $' . number_format($zone->min_order_for_free_shipping, 0) . ' MXN).',
+                ];
+            }
+        }
+
+        // 2. Relacionar dirección / colonia contra zonas activas
+        $activeZones = ShippingZone::where('is_active', true)->get();
+        foreach ($activeZones as $zone) {
+            $neighNorm = strtr(mb_strtolower($zone->neighborhood), [
+                'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n',
+            ]);
+            if ($neighNorm !== '' && str_contains($normalized, $neighNorm)) {
+                return [
+                    'covered' => true,
+                    'is_mexico' => true,
+                    'zip_code' => $zone->zip_code,
+                    'zone' => $zone,
+                    'message' => "Dirección relacionada con {$zone->neighborhood} (CP {$zone->zip_code}, México). ¡Sí hay cobertura! Envío \$" . number_format($zone->delivery_cost, 2) . ' MXN.',
+                ];
+            }
+        }
+
+        // 3. Consultar fragmentos RAG (shipping_zone) para relacionar dirección con CP registrado en el RAG
+        $ragMatches = $this->retrieve($raw, topK: 3, minSimilarity: 0.08)
+            ->filter(fn ($item) => $item['chunk']->source_type === 'shipping_zone');
+
+        foreach ($ragMatches as $match) {
+            $content = $match['chunk']->content;
+            if (preg_match_all('/CP\s+(\d{5})\s*\(([^,)]+)/u', $content, $matches, PREG_SET_ORDER)) {
+                foreach ($matches as $m) {
+                    $ragCp = $m[1];
+                    $ragColonia = strtr(mb_strtolower(trim($m[2])), [
+                        'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n',
+                    ]);
+                    if (($extractedCp && $extractedCp === $ragCp) || ($ragColonia !== '' && str_contains($normalized, $ragColonia))) {
+                        $zone = ShippingZone::where('is_active', true)->where('zip_code', $ragCp)->first();
+                        return [
+                            'covered' => true,
+                            'is_mexico' => true,
+                            'zip_code' => $ragCp,
+                            'zone' => $zone,
+                            'message' => "Dirección relacionada vía RAG con CP {$ragCp} ({$m[2]}, México). ¡Sí tenemos cobertura!",
+                        ];
+                    }
+                }
+            }
+        }
+
+        return [
+            'covered' => false,
+            'is_mexico' => true,
+            'zip_code' => $extractedCp,
+            'zone' => null,
+            'message' => $extractedCp
+                ? "El CP {$extractedCp} (México) aún no se encuentra en nuestras zonas de cobertura activa. Prueba con 06700 (Roma Norte), 06870 (Chabacano), 03100 (Del Valle) o 06140 (Condesa)."
+                : 'No pudimos relacionar esa dirección con un código postal mexicano en cobertura. Incluye tu CP de 5 dígitos o colonia (ej. Roma Norte 06700, Chabacano 06870).',
+        ];
+    }
+
+    /**
      * Process a chat interaction using RAG (Embeddings + Retrieval, NO agents).
      *
      * @param  array<int, array{role: string, content: string}>  $history

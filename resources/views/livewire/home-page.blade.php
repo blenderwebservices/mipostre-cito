@@ -34,19 +34,25 @@
                     {{-- 2. Validador de Cobertura (Estilo Mi Mandadito) --}}
                     <div class="lg:col-span-5">
                         <div class="bg-white text-slate-800 rounded-3xl p-6 shadow-2xl">
-                            <div class="flex items-center gap-2.5 mb-2">
-                                <div class="w-9 h-9 rounded-full bg-gepp-50 text-gepp-600 flex items-center justify-center">
-                                    <i class="fa-solid fa-location-dot"></i>
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-9 h-9 rounded-full bg-gepp-50 text-gepp-600 flex items-center justify-center">
+                                        <i class="fa-solid fa-location-dot"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="font-extrabold text-base text-slate-900">Verifica tu Cobertura (México)</h2>
+                                        <p class="text-xs text-slate-500">Ingresa tu Código Postal (5 dígitos) o dirección en México</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 class="font-extrabold text-base text-slate-900">Verifica tu Cobertura</h2>
-                                    <p class="text-xs text-slate-500">Ingresa tu Código Postal o Colonia para ver costos de envío</p>
-                                </div>
+                                <button type="button" wire:click="openCoverageModal"
+                                    class="text-[11px] font-bold text-gepp-600 hover:underline cursor-pointer shrink-0">
+                                    Abrir modal
+                                </button>
                             </div>
 
                             <form wire:submit="checkCoverage" class="mt-4 space-y-3">
                                 <div class="flex gap-2">
-                                    <input type="text" wire:model="coverageQuery" placeholder="Ej. 06700, Del Valle, Roma..."
+                                    <input type="text" wire:model="coverageQuery" placeholder="Ej. 06870, o Av. Insurgentes 1450, Del Valle..."
                                         class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-gepp-500 outline-none">
                                     <button type="submit"
                                         class="px-5 py-2.5 rounded-xl bg-gepp-600 hover:bg-gepp-700 text-white font-bold text-sm transition-colors cursor-pointer">
@@ -57,7 +63,14 @@
                                 @if($coverageError)
                                     <p class="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-100">{{ $coverageError }}</p>
                                 @endif
-                                @if($activeZone)
+                                @if($coverageSuccess)
+                                    <div class="text-xs text-emerald-800 bg-emerald-50 p-3 rounded-xl border border-emerald-200 space-y-2">
+                                        <p><i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i>{{ $coverageSuccess }}</p>
+                                        <a href="{{ route('menu') }}" wire:navigate class="inline-flex items-center gap-1 font-bold text-gepp-700 hover:underline">
+                                            Ir al Menú con esta zona →
+                                        </a>
+                                    </div>
+                                @elseif($activeZone)
                                     <p class="text-xs text-emerald-700 bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
                                         <i class="fa-solid fa-circle-check mr-1"></i>
                                         Zona activa: <strong>{{ $activeZone->neighborhood }} (CP {{ $activeZone->zip_code }})</strong> · Envío ${{ number_format($activeZone->delivery_cost, 2) }} MXN.
@@ -134,5 +147,57 @@
             @endforeach
         </div>
     </section>
+
+    {{-- Modal de Cobertura (Dirección completa o CP exclusivamente en México) --}}
+    @if($isCoverageModalOpen)
+        <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+                <button type="button" wire:click="closeCoverageModal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-full bg-gepp-50 text-gepp-600 flex items-center justify-center">
+                        <i class="fa-solid fa-map-location-dot text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-lg text-slate-900">Cobertura en México</h3>
+                        <p class="text-xs text-slate-500">Relacionamos tu dirección con los CP registrados en el RAG</p>
+                    </div>
+                </div>
+
+                <form wire:submit="checkCoverage" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Dirección completa (México)</label>
+                        <input type="text" wire:model="coverageAddress" placeholder="Calle, número, colonia, ciudad (México)"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-gepp-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Código Postal (5 dígitos, México)</label>
+                        <input type="text" wire:model="coverageQuery" maxlength="10" placeholder="Ej. 06870, 06700, 03100"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-gepp-500 outline-none">
+                    </div>
+
+                    @if($coverageError)
+                        <p class="text-xs text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100">{{ $coverageError }}</p>
+                    @endif
+                    @if($coverageSuccess)
+                        <div class="text-xs text-emerald-800 bg-emerald-50 p-3 rounded-xl border border-emerald-200 space-y-2">
+                            <p><i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i>{{ $coverageSuccess }}</p>
+                            <a href="{{ route('menu') }}" wire:navigate class="inline-flex items-center gap-1 font-bold text-gepp-700 hover:underline">
+                                Explorar Menú →
+                            </a>
+                        </div>
+                    @endif
+
+                    <button type="submit"
+                        class="w-full py-3 rounded-full bg-gepp-600 hover:bg-gepp-700 text-white font-bold text-sm shadow-md cursor-pointer">
+                        Verificar Cobertura
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
 </div>
 
